@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Homepage</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        function abductMe() {
+            const profilePic = document.getElementById('profile-pic');
+            const wrapper = profilePic.parentElement;
+            
+            // Add abduction class to trigger animation
+            profilePic.classList.add('being-abducted');
+            
+            // Create tractor beam effect
+            const beam = document.createElement('div');
+            beam.className = 'tractor-beam';
+            wrapper.appendChild(beam);
+            
+            // Remove effects after animation
+            setTimeout(() => {
+                profilePic.classList.remove('being-abducted');
+                if (beam.parentNode) {
+                    beam.parentNode.removeChild(beam);
+                }
+            }, 4000);
+        }
+    </script>
 </head>
 <body>
 <div class="spaceship-bg">
@@ -18,9 +40,9 @@
     <div class="intro">
         <h1>Hello World</h1>
         <div class="profile-pic-wrapper">
-            <img src="profile.jpg" alt="My Photo" class="profile-pic">
+            <img src="profile.jpg" alt="My Photo" class="profile-pic" id="profile-pic">
         </div>
-        <button class="contact-btn">Contact Me</button>
+        <button class="contact-btn" onclick="abductMe()">Abduct Me</button>
     </div>
 </div>
 <div class="dancing-cows">
