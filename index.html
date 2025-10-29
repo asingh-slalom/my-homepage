@@ -88,6 +88,7 @@
 <section id="weather-widget" style="position:fixed;top:20px;right:20px;max-width:250px;padding:1em;background:rgba(255,255,255,0.95);border:2px solid #4CAF50;border-radius:12px;text-align:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);z-index:1000;font-family:Arial,sans-serif;">
     <h3 style="margin:0 0 10px 0;color:#333;font-size:16px;">🌤️ Weather</h3>
     <div id="weather-info" style="color:#666;font-size:14px;">Loading weather...</div>
+    <button id="location-btn" style="display:none;margin-top:8px;padding:4px 8px;background:#4CAF50;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;" onclick="getUserLocation()">📍 Get My Weather</button>
 </section>
 <div class="grass"></div>
 </body>
@@ -135,31 +136,65 @@ function showError(message = 'Unable to load weather.') {
 // Try to get weather with fallback to default location (New York) if geolocation fails
 async function initWeather() {
     try {
+        // Always start with fallback weather (NYC) and show location button
+        await fallbackWeather();
+        
+        // Show the "Get My Weather" button for user-initiated geolocation
+        if (navigator.geolocation) {
+            document.getElementById('location-btn').style.display = 'block';
+        }
+    } catch (error) {
+        console.log('Init weather failed:', error);
+        showError('Weather unavailable');
+    }
+}
+
+async function getUserLocation() {
+    const btn = document.getElementById('location-btn');
+    btn.textContent = '📍 Loading...';
+    btn.disabled = true;
+    
+    try {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 async pos => {
                     try {
                         const weather = await fetchWeather(pos.coords.latitude, pos.coords.longitude);
                         await showWeatherWithLocation(weather, pos.coords.latitude, pos.coords.longitude);
+                        btn.style.display = 'none'; // Hide button after successful location fetch
                     } catch (error) {
                         console.log('Weather fetch failed:', error);
-                        // Fallback to New York coordinates
-                        fallbackWeather();
+                        btn.textContent = '❌ Failed';
+                        setTimeout(() => {
+                            btn.textContent = '📍 Get My Weather';
+                            btn.disabled = false;
+                        }, 2000);
                     }
                 },
                 error => {
                     console.log('Geolocation failed:', error);
-                    // Fallback to New York coordinates
-                    fallbackWeather();
+                    btn.textContent = '❌ Location Denied';
+                    setTimeout(() => {
+                        btn.textContent = '📍 Get My Weather';
+                        btn.disabled = false;
+                    }, 2000);
                 },
-                { timeout: 10000 } // 10 second timeout
+                { 
+                    timeout: 10000,
+                    enableHighAccuracy: true,
+                    maximumAge: 300000 // 5 minutes
+                }
             );
         } else {
-            fallbackWeather();
+            btn.textContent = '❌ Not Supported';
         }
     } catch (error) {
-        console.log('Init weather failed:', error);
-        showError('Weather unavailable');
+        console.log('Get location failed:', error);
+        btn.textContent = '❌ Error';
+        setTimeout(() => {
+            btn.textContent = '📍 Get My Weather';
+            btn.disabled = false;
+        }, 2000);
     }
 }
 
@@ -168,7 +203,20 @@ async function fallbackWeather() {
         // Use New York coordinates as fallback
         const lat = 40.7128, lon = -74.0060;
         const weather = await fetchWeather(lat, lon);
-        await showWeatherWithLocation(weather, lat, lon);
+        
+        // Show weather with a note that it's using default location
+        const weatherCodes = {
+            0: 'Clear', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+            45: 'Fog', 48: 'Depositing rime fog', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+            61: 'Rain', 63: 'Rain', 65: 'Rain', 71: 'Snow', 73: 'Snow', 75: 'Snow',
+            80: 'Rain showers', 81: 'Rain showers', 82: 'Rain showers',
+        };
+        
+        document.getElementById('weather-info').innerHTML =
+            `<strong style="font-size:18px;color:#333;">${weather.temperature}°F</strong><br>` +
+            `<span style="color:#666;">${weatherCodes[weather.weathercode] || 'Unknown'}</span><br>` +
+            `<small style="color:#999;">New York, NY</small>`;
+            
     } catch (error) {
         console.log('Fallback weather failed:', error);
         showError('Weather service unavailable');
