@@ -85,6 +85,96 @@
     <span class="cow">🐄</span>
     <span class="cow">🐄</span>
 </div>
+<section id="weather-widget" style="position:fixed;top:20px;right:20px;max-width:250px;padding:1em;background:rgba(255,255,255,0.95);border:2px solid #4CAF50;border-radius:12px;text-align:center;box-shadow:0 4px 8px rgba(0,0,0,0.2);z-index:1000;font-family:Arial,sans-serif;">
+    <h3 style="margin:0 0 10px 0;color:#333;font-size:16px;">🌤️ Weather</h3>
+    <div id="weather-info" style="color:#666;font-size:14px;">Loading weather...</div>
+</section>
 <div class="grass"></div>
 </body>
-</html>
+<script>
+// Simple weather widget using Open-Meteo API (no API key required)
+async function fetchWeather(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Weather fetch failed');
+    const data = await res.json();
+    return data.current_weather;
+}
+
+async function showWeatherWithLocation({ temperature, weathercode }, lat, lon) {
+    const weatherCodes = {
+        0: 'Clear', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Fog', 48: 'Depositing rime fog', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+        61: 'Rain', 63: 'Rain', 65: 'Rain', 71: 'Snow', 73: 'Snow', 75: 'Snow',
+        80: 'Rain showers', 81: 'Rain showers', 82: 'Rain showers',
+    };
+    let locationName = '';
+    try {
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData.address) {
+                locationName = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.hamlet || geoData.address.state || geoData.address.county || geoData.address.country || '';
+                if (geoData.address.state && locationName !== geoData.address.state) {
+                    locationName += ', ' + geoData.address.state;
+                }
+            }
+        }
+    } catch (e) {
+        locationName = '';
+    }
+    document.getElementById('weather-info').innerHTML =
+        `<strong style="font-size:18px;color:#333;">${temperature}°F</strong><br><span style="color:#666;">${weatherCodes[weathercode] || 'Unknown'}</span>` +
+        (locationName ? `<br><small style="color:#999;">${locationName}</small>` : '');
+}
+
+function showError(message = 'Unable to load weather.') {
+    document.getElementById('weather-info').innerHTML = `<span style="color:#e74c3c;">${message}</span>`;
+}
+
+// Try to get weather with fallback to default location (New York) if geolocation fails
+async function initWeather() {
+    try {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async pos => {
+                    try {
+                        const weather = await fetchWeather(pos.coords.latitude, pos.coords.longitude);
+                        await showWeatherWithLocation(weather, pos.coords.latitude, pos.coords.longitude);
+                    } catch (error) {
+                        console.log('Weather fetch failed:', error);
+                        // Fallback to New York coordinates
+                        fallbackWeather();
+                    }
+                },
+                error => {
+                    console.log('Geolocation failed:', error);
+                    // Fallback to New York coordinates
+                    fallbackWeather();
+                },
+                { timeout: 10000 } // 10 second timeout
+            );
+        } else {
+            fallbackWeather();
+        }
+    } catch (error) {
+        console.log('Init weather failed:', error);
+        showError('Weather unavailable');
+    }
+}
+
+async function fallbackWeather() {
+    try {
+        // Use New York coordinates as fallback
+        const lat = 40.7128, lon = -74.0060;
+        const weather = await fetchWeather(lat, lon);
+        await showWeatherWithLocation(weather, lat, lon);
+    } catch (error) {
+        console.log('Fallback weather failed:', error);
+        showError('Weather service unavailable');
+    }
+}
+
+// Initialize weather when page loads
+initWeather();
+</script>
