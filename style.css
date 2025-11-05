@@ -27,10 +27,19 @@ body::before {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    position: relative;
+    z-index: 10;
 }
 
 .intro {
-    background: rgba(255,255,255,0.10);
+    background: #a8d8ea;
+    background-image: 
+        radial-gradient(ellipse 900px 100px at 20% 25%, rgba(255,255,255,0.95) 0%, transparent 45%),
+        radial-gradient(ellipse 750px 90px at 75% 65%, rgba(255,255,255,0.9) 0%, transparent 45%),
+        radial-gradient(ellipse 850px 95px at 45% 85%, rgba(255,255,255,0.92) 0%, transparent 45%),
+        radial-gradient(ellipse 650px 80px at 10% 70%, rgba(255,255,255,0.88) 0%, transparent 50%);
+    background-size: cover;
+    background-position: center;
     padding: 2rem 3rem;
     border-radius: 24px;
     box-shadow: 0 8px 32px rgba(30,60,114,0.15);
@@ -40,7 +49,7 @@ body::before {
 }
 
 h1 {
-    color: #fff;
+    color: #1e3c72;
     margin-bottom: 1.5rem;
     font-size: 2.5rem;
     letter-spacing: 2px;
@@ -101,22 +110,44 @@ h1 {
 }
 
 .music-btn {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.9rem;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
     border: none;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    font-weight: 500;
+    border-radius: 30px;
+    background: #fff;
+    color: #1e3c72;
+    font-weight: 600;
     cursor: pointer;
     margin-top: 1rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(30,60,114,0.10);
+    transition: background 0.2s, color 0.2s;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.music-btn::before {
+    content: "";
+    position: absolute;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    z-index: -1;
+    border-radius: 34px;
+    background: linear-gradient(90deg, #3a8dde, #1e3c72, #3a8dde);
+    background-size: 200% 200%;
+    filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s, background-position 0.6s;
 }
 
 .music-btn:hover {
-    background: rgba(255,255,255,0.3);
-    transform: scale(1.05);
+    background: #3a8dde;
+    color: #fff;
+    box-shadow: 0 0 24px 4px #3a8dde66;
+}
+
+.music-btn:hover::before {
+    opacity: 1;
+    background-position: 100% 0;
 }
 
 .dancing-cows {
